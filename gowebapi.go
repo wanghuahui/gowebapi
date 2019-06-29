@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"gowebapi/api/route"
 	"gowebapi/api/shared/database"
 	"gowebapi/api/shared/jsonconfig"
 	"gowebapi/api/shared/recaptcha"
@@ -41,12 +42,13 @@ func main() {
 	// Echo instance
 	e := echo.New()
 
+	route.Load(e)
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	// Route => handler
-	e.GET("/hello", func(c echo.Context) error {
+	e.GET("/", func(c echo.Context) error {
 		dbname := databases.Type
 		return c.String(http.StatusOK, "Hello, "+string(dbname)+"!\n")
 	})
