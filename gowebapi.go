@@ -6,11 +6,9 @@ import (
 	"gowebapi/api/shared/database"
 	"gowebapi/api/shared/jsonconfig"
 	"gowebapi/api/shared/recaptcha"
-	"net/http"
 	"os"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
 // *****************************************************************************
@@ -37,21 +35,17 @@ func main() {
 
 	// Connect to database
 	database.Connect(config.Database)
-	databases := database.ReadConfig()
 
 	// Echo instance
 	e := echo.New()
 
 	route.Load(e)
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
 
-	// Route => handler
-	e.GET("/", func(c echo.Context) error {
-		dbname := databases.Type
-		return c.String(http.StatusOK, "Hello, "+string(dbname)+"!\n")
-	})
+	// // Route => handler
+	// e.GET("/", func(c echo.Context) error {
+	// 	dbname := databases.Type
+	// 	return c.String(http.StatusOK, "Hello, "+string(dbname)+"!\n")
+	// })
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
