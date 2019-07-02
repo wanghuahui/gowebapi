@@ -11,15 +11,23 @@ import (
 	"github.com/labstack/echo"
 )
 
-type user struct {
-	ID        uint32
-	FirstName string
-	LastName  string
-	Email     string
-	StatusID  uint8
-	CreatedAt string
-	UpdatedAt time.Time
-}
+type (
+	user struct {
+		ID        uint32
+		FirstName string
+		LastName  string
+		Email     string
+		StatusID  uint8
+		CreatedAt string
+		UpdatedAt time.Time
+		Token     token
+	}
+	token struct {
+		AccessToken string
+		TokenType   string
+		ExpiresTime uint32
+	}
+)
 
 // UserByEmail gets user information from email
 func UserByEmail(email string) (model.User, error) {
@@ -70,6 +78,11 @@ func UserCreate(c echo.Context) error {
 		Email:     result.Email,
 		StatusID:  result.StatusID,
 		CreatedAt: result.CreatedAt.Format("2006-01-02 15:04:05"),
+		Token: token{
+			AccessToken: "access_token",
+			TokenType:   "Bearer",
+			ExpiresTime: 3600,
+		},
 	}
 	return c.JSON(http.StatusCreated, user)
 }
