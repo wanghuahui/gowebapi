@@ -13,7 +13,7 @@ import (
 
 type (
 	user struct {
-		ID        uint32
+		ID        uint32 `json:"id"`
 		FirstName string
 		LastName  string
 		Email     string
