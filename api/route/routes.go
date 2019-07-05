@@ -27,6 +27,14 @@ func routes(e *echo.Echo) {
 		return c.String(http.StatusOK, "The Version is v1.0.0\n")
 	})
 
+	// 游客可以访问的接口
 	// 用户注册
 	e.POST("/users", controller.UserCreate)
+
+	// 需要 token 验证的接口
+	// Restricted group
+	r := e.Group("")
+	r.Use(middleware.JWT([]byte("secret")))
+	// 当前登录用户信息
+	r.GET("/user", restricted)
 }

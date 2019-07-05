@@ -6,7 +6,6 @@ import (
 	"gowebapi/api/shared/database"
 	"gowebapi/api/shared/passhash"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo"
 )
@@ -14,18 +13,18 @@ import (
 type (
 	user struct {
 		ID        uint32 `json:"id"`
-		FirstName string
-		LastName  string
-		Email     string
-		StatusID  uint8
-		CreatedAt string
-		UpdatedAt time.Time
-		Token     token
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string `json:"email"`
+		StatusID  uint8  `json:"status_id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+		Token     token  `json:"token"`
 	}
 	token struct {
-		AccessToken string
-		TokenType   string
-		ExpiresTime uint32
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		ExpiresIn   uint32 `json:"expires_in"`
 	}
 )
 
@@ -81,7 +80,7 @@ func UserCreate(c echo.Context) error {
 		Token: token{
 			AccessToken: "access_token",
 			TokenType:   "Bearer",
-			ExpiresTime: 3600,
+			ExpiresIn:   3600,
 		},
 	}
 	return c.JSON(http.StatusCreated, user)
