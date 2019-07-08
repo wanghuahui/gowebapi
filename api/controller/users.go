@@ -83,5 +83,10 @@ func UserCreate(c echo.Context) error {
 			ExpiresIn:   3600,
 		},
 	}
-	return c.JSON(http.StatusCreated, user)
+	var res string
+	res = fmt.Sprintf(`{"id":%d,"first_name":"%v","last_name":"%v","email":"%v","status_id":%d,"created_at":"%v",
+		"token":{"access_token":%v,"token_type":%v,"expires_in":%d}}`,
+		result.ID, result.FirstName, result.LastName, result.Email, result.StatusID, result.CreatedAt.Format("2006-01-02 15:04:05"),
+		"access_token", "Bearer", 3600)
+	return c.JSONBlob(http.StatusCreated, []byte(res))
 }
