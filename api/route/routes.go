@@ -36,5 +36,5 @@ func routes(e *echo.Echo) {
 	r := e.Group("")
 	r.Use(middleware.JWT([]byte("secret")))
 	// 当前登录用户信息
-	r.GET("/user", restricted)
+	// r.GET("/user", restricted)
 }
