@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"fmt"
 	"gowebapi/api/model"
 	"gowebapi/api/shared/database"
 	"gowebapi/api/shared/passhash"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )
 
@@ -28,20 +29,54 @@ type (
 	}
 )
 
-// UserByEmail gets user information from email
-func UserByEmail(email string) (model.User, error) {
+// userByEmail gets user information from email
+func userByEmail(email string) (model.User, error) {
 	var err error
 
 	result := model.User{}
 
 	switch database.ReadConfig().Type {
 	case database.TypeMySQL:
-		err = database.SQL.Get(&result, "SELECT id, first_name, last_name, email, password, status_id, created_at FROM user WHERE email = ? LIMIT 1", email)
+		err = database.SQL.Get(&result, "SELECT id, first_name, last_name, email, status_id, created_at FROM user WHERE email = ? LIMIT 1", email)
 	default:
 		err = model.ErrCode
 	}
 	// fmt.Println(err.Error())
 	return result, model.StandardizeError(err)
+}
+
+// userByID gets user information from id
+func userByID(id uint32) (model.User, error) {
+	var err error
+
+	result := model.User{}
+
+	switch database.ReadConfig().Type {
+	case database.TypeMySQL:
+		err = database.SQL.Get(&result, "SELECT id, first_name, last_name, email, status_id, created_at FROM user WHERE id = ? LIMIT 1", id)
+	default:
+		err = model.ErrCode
+	}
+	return result, model.StandardizeError(err)
+}
+
+func tokenCreate(id uint32) (string, error) {
+	// Create token
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	// Set claims
+	claims := token.Claims.(jwt.MapClaims)
+	claims["id"] = id
+	// claims["admin"] = true
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return "", err
+	}
+
+	return t, nil
 }
 
 // UserCreate creates user
@@ -55,7 +90,7 @@ func UserCreate(c echo.Context) error {
 
 	password, _ := passhash.HashString(u.Password)
 	// Get database result
-	_, err = UserByEmail(u.Email)
+	_, err = userByEmail(u.Email)
 
 	if err == model.ErrNoResult { // If success (no user exists with that email)
 		switch database.ReadConfig().Type {
@@ -68,8 +103,11 @@ func UserCreate(c echo.Context) error {
 	}
 
 	// Get database result
-	result, _ := UserByEmail(u.Email)
-	fmt.Println(result.FirstName, result.LastName)
+	result, _ := userByEmail(u.Email)
+	t, err := tokenCreate(result.ID)
+	if err != nil {
+		return err
+	}
 	user := &user{
 		ID:        result.ID,
 		FirstName: result.FirstName,
@@ -78,10 +116,22 @@ func UserCreate(c echo.Context) error {
 		StatusID:  result.StatusID,
 		CreatedAt: result.CreatedAt.Format("2006-01-02 15:04:05"),
 		Token: token{
-			AccessToken: "access_token",
+			AccessToken: t,
 			TokenType:   "Bearer",
-			ExpiresIn:   3600,
+			ExpiresIn:   uint32(3600 * 72),
 		},
 	}
 	return c.JSON(http.StatusCreated, user)
+}
+
+// UserShow shows user
+func UserShow(c echo.Context) error {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	id := claims["id"].(uint32)
+	// Get database result
+	result, err := userByID(id)
+	if err != nil {
+		return err
+	}
 }
