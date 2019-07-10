@@ -62,13 +62,13 @@ func userByID(id int) (model.User, error) {
 	return result, model.StandardizeError(err)
 }
 
-func tokenCreate(id uint32) (string, error) {
+func tokenCreate(id int) (string, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = strconv.Itoa(int(id))
+	claims["id"] = strconv.Itoa(id)
 	// claims["admin"] = true
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
@@ -79,6 +79,14 @@ func tokenCreate(id uint32) (string, error) {
 	}
 
 	return t, nil
+}
+
+func tokenValid(c echo.Context) (int, error) {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	sid, _ := claims["id"].(string)
+	id, err := strconv.Atoi(sid)
+	return id, err
 }
 
 // UserCreate creates user
@@ -106,7 +114,7 @@ func UserCreate(c echo.Context) error {
 
 	// Get database result
 	result, _ := userByEmail(u.Email)
-	t, err := tokenCreate(result.ID)
+	t, err := tokenCreate(int(result.ID))
 	if err != nil {
 		return err
 	}
@@ -143,7 +151,7 @@ func UserLogin(c echo.Context) error {
 	if ok := passhash.MatchString(result.Password, password); !ok {
 		return c.String(http.StatusUnauthorized, "用户名或密码错误")
 	}
-	t, _ := tokenCreate(result.ID)
+	t, _ := tokenCreate(int(result.ID))
 	token := &token{
 		AccessToken: t,
 		TokenType:   "Bearer",
@@ -154,10 +162,7 @@ func UserLogin(c echo.Context) error {
 
 // UserShow shows user
 func UserShow(c echo.Context) error {
-	token := c.Get("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	sid, _ := claims["id"].(string)
-	id, _ := strconv.Atoi(sid)
+	id, _ := tokenValid(c)
 	// Get database result
 	result, err := userByID(id)
 	if err != nil {
@@ -172,4 +177,22 @@ func UserShow(c echo.Context) error {
 		CreatedAt: result.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 	return c.JSON(http.StatusOK, user)
+}
+
+// UserRefresh refreshs user
+func UserRefresh(c echo.Context) error {
+	id, _ := tokenValid(c)
+
+	t, _ := tokenCreate(id)
+	token := &token{
+		AccessToken: t,
+		TokenType:   "Bearer",
+		ExpiresIn:   3600 * 72,
+	}
+	return c.JSON(http.StatusCreated, token)
+}
+
+// UserLogout user logout
+func UserLogout(c echo.Context) error {
+
 }

@@ -32,6 +32,10 @@ func routes(e *echo.Echo) {
 	e.POST("/users", controller.UserCreate)
 	// 登录
 	e.POST("/authorizations", controller.UserLogin)
+	// 刷新token
+	e.PUT("/authorizations/current", controller.UserRefresh)
+	// 删除token
+	e.DELETE("/authorizations/current", controller.UserLogout)
 
 	// 需要 token 验证的接口
 	// Restricted group
