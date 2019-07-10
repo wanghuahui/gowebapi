@@ -30,11 +30,13 @@ func routes(e *echo.Echo) {
 	// 游客可以访问的接口
 	// 用户注册
 	e.POST("/users", controller.UserCreate)
+	// 登录
+	e.POST("/authorizations", controller.UserLogin)
 
 	// 需要 token 验证的接口
 	// Restricted group
-	r := e.Group("")
+	r := e.Group("/auth")
 	r.Use(middleware.JWT([]byte("secret")))
 	// 当前登录用户信息
-	// r.GET("/user", restricted)
+	r.GET("/user", controller.UserShow)
 }
